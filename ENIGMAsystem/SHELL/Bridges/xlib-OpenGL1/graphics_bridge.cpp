@@ -1,4 +1,5 @@
 /** Copyright (C) 2013 forthevin
+*** Copyright (C) 2013 Rexhunter99
 ***
 *** This file is a part of the ENIGMA Development Environment.
 ***
@@ -15,13 +16,58 @@
 *** with this code. If not, see <http://www.gnu.org/licenses/>
 **/
 
+#include <stdio>
+#include <cstring>
+
+using namespace std;
+
 #include <X11/Xlib.h>
 #include "../General/glxew.h"
 #include <Platforms/xlib/XLIBmain.h>
 #include <Graphics_Systems/graphics_mandatory.h>
 
-#include <iostream>
-#include <cstring>
+namespace enigma
+{
+
+	void GetXVisual( XVisualInfo** vi )
+	{
+        GLint att[] = {
+            GLX_RGBA,
+            GLX_DOUBLEBUFFER,
+            GLX_DEPTH_SIZE,		24,
+            None
+        };
+
+        *vi = glXChooseVisual( x11::disp, 0, att );
+
+        if( *vi == NULL )
+        {
+            show_error( "Failed to get a legacy XVisualInfo!\n", 1 );
+        }
+	}
+
+	void EnableDrawing( XVisualInfo** vi, GLXContext* ctx )
+	{
+        // -- Give us a GL context
+        if ( (*ctx = glXCreateContext( x11::disp, *vi, NULL, True)) == 0 )
+        {
+            show_error( "GL3 Failed to get Legacy context\n", 1 );
+            return;
+        }
+
+        // -- Make the context current to this thread
+        glXMakeCurrent( x11::disp, x11::win, *ctx );
+
+        // -- Clear the back buffers
+        glClear( GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_STENCIL_BUFFER_BIT );
+	}
+
+	void DisableDrawing()
+	{
+	}
+
+};
+
 
 // NOTE: Changes/fixes that applies to this likely also applies to the OpenGL3 version.
 
@@ -61,7 +107,7 @@ namespace enigma {
 #include <Universal_System/roomsystem.h> // room_caption, update_mouse_variables
 
 namespace enigma_user {
-  
+
   void set_synchronization(bool enable) {
 
     // General notes:
@@ -92,7 +138,7 @@ namespace enigma_user {
       // See http://www.opengl.org/registry/specs/SGI/swap_control.txt for more information.
     }
   }
-  
+
   void screen_refresh() {
     glXSwapBuffers(enigma::x11::disp, enigma::x11::win);
     enigma::update_mouse_variables();

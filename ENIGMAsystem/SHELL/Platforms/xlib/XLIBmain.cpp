@@ -45,6 +45,14 @@ namespace enigma_user {
 
 namespace enigma
 {
+	void InitGLXFuncs( );
+	void GetXVisual( XVisualInfo** vi );
+	void EnableDrawing( XVisualInfo** vi, GLXContext* ctx );
+	void DisableDrawing( GLXContext* ctx );
+}
+
+namespace enigma
+{
   extern char keymap[512];
   extern char usermap[256];
   void ENIGMA_events(void); //TODO: Synchronize this with Windows by putting these two in a single header.
@@ -70,7 +78,7 @@ namespace enigma
 
               if (!(gk & 0xFF00)) actualKey = enigma::usermap[(int)enigma::keymap[gk & 0xFF]];
               else actualKey = enigma::usermap[(int)enigma::keymap[gk & 0x1FF]];
-              { // Set keyboard_lastchar. Seems to work without 
+              { // Set keyboard_lastchar. Seems to work without
                   char str[1];
                   int len = XLookupString(&e.xkey, str, 1, NULL, NULL);
                   if (len > 0) {
@@ -207,13 +215,12 @@ int main(int argc,char** argv)
 	wm_delwin = XInternAtom(disp,"WM_DELETE_WINDOW",False);
 	Window root = DefaultRootWindow(disp);
 
-	// Prepare openGL
-	GLint att[] = { GLX_RGBA, GLX_DOUBLEBUFFER, GLX_DEPTH_SIZE, 24, None };
-	XVisualInfo *vi = glXChooseVisual(disp,0,att);
-	if(!vi){
-		printf("GLFail\n");
-		return -2;
-	}
+	// -- Initialise GLX Functions (Fix to circumvent broken GLXEW init)
+	enigma::InitGLXFuncs( );
+
+	// -- Prepare OpenGL
+	XVisualInfo *vi;
+	enigma::GetXVisual( &vi );
 
 	// Window event listening and coloring
 	XSetWindowAttributes swa;
@@ -231,20 +238,12 @@ int main(int argc,char** argv)
 
 	//prepare window for display (center, caption, etc)
 	screen = DefaultScreenOfDisplay(disp);
-	//printf("Screen: %d %d %d %d\n",s->width/2,s->height/2,winw,winh);
 	XMoveWindow(disp,win,(screen->width-winw)/2,(screen->height-winh)/2);
 
 	//geom();
-	//give us a GL context
-	GLXContext glxc = glXCreateContext(disp, vi, NULL, True);
-	if (!glxc){
-		printf("NoContext\n");
-		return -3;
-	}
-
-	//apply context
-	glXMakeCurrent(disp,win,glxc); //flushes
-	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT|GL_ACCUM_BUFFER_BIT|GL_STENCIL_BUFFER_BIT);
+	// -- Create the desired OpenGL Rendering Context
+	GLXContext glxc;
+	enigma::EnableDrawing( &vi, &glxc );
 
 	/* XEvent e;//wait for server to report our display request
 	do {
@@ -334,7 +333,8 @@ int main(int argc,char** argv)
 
 	end:
 	enigma::game_ending();
-  glXDestroyContext(disp,glxc);
+	//enigma::DisableDrawing( &glxc );
+	glXDestroyContext(disp,glxc);
   XCloseDisplay(disp);
 	return 0;
 }

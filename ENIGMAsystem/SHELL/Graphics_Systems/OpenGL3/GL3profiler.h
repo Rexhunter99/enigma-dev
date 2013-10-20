@@ -1,4 +1,4 @@
-/** Copyright (C) 2008-2013 Josh Ventura, Robert B. Colton
+/** Copyright (C) 2008-2013 Josh Ventura, Robert B. Colton, Rexhunter99
 ***
 *** This file is a part of the ENIGMA Development Environment.
 ***
@@ -20,5 +20,7 @@
 #ifndef __GLPROFILERH_
 #define __GLPROFILERH_
 #include "../General/OpenGLHeaders.h"
+
+size_t query_graphics_total_vmem();
 
 #endif

@@ -1,6 +1,7 @@
 /********************************************************************************\
 **                                                                              **
 **  Copyright (C) 2008 Josh Ventura                                             **
+**  Copyright (C) 2013 Rexhunter99												**
 **                                                                              **
 **  This file is a part of the ENIGMA Development Environment.                  **
 **                                                                              **
@@ -27,6 +28,7 @@
 
 #include <string>
 #include <windows.h>
+#include <cstdio>
 using namespace std;
 
 #include "../General/wglew.h"
@@ -39,12 +41,6 @@ namespace enigma
 {
     void EnableDrawing (HGLRC *hRC)
     {
-		/**
-		 * Edited by Cool Breeze on 16th October 2013
-		 * + Updated the Pixel Format to support 24-bitdepth buffers
-		 * + Correctly create a GL 3.x compliant context
-		 */
-		
 		HGLRC LegacyRC;
         PIXELFORMATDESCRIPTOR pfd;
         int iFormat;
@@ -54,6 +50,8 @@ namespace enigma
         pfd.nSize = sizeof (pfd);
         pfd.nVersion = 1;
         pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+        // -- Support AFR in SLI/CrossFireX
+        pfd.dwFlags|= PDF_SWAP_EXCHANGE;
         pfd.iPixelType = PFD_TYPE_RGBA;
         pfd.cColorBits = 24;
         pfd.cDepthBits = 24;
@@ -65,14 +63,14 @@ namespace enigma
         SetPixelFormat ( enigma::window_hDC, iFormat, &pfd );
         LegacyRC = wglCreateContext( enigma::window_hDC );
         wglMakeCurrent( enigma::window_hDC, LegacyRC );
-        
+
         // -- Initialise GLEW
         GLenum err = glewInit();
         if (GLEW_OK != err)
         {
 			return;
         }
- 
+
 		// -- Define an array of Context Attributes
         int attribs[] =
         {
@@ -81,7 +79,7 @@ namespace enigma
 			WGL_CONTEXT_FLAGS_ARB, 0,
 			0
         };
- 
+
         if ( wglewIsSupported("WGL_ARB_create_context") )
         {
                 *hRC = wglCreateContextAttribsARB( enigma::window_hDC,0, attribs );
@@ -98,7 +96,7 @@ namespace enigma
 	void WindowResized() {
 
 	}
-	
+
     void DisableDrawing (HWND hWnd, HDC hDC, HGLRC hRC)
     {
         wglMakeCurrent (NULL, NULL);

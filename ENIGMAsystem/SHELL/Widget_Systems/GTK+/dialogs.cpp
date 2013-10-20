@@ -1,6 +1,7 @@
 /********************************************************************************\
 **                                                                              **
 **  Copyright (C) 2008 Josh Ventura                                             **
+**  Copyright (C) 2013 Rexhunter99                                              **
 **                                                                              **
 **  This file is a part of the ENIGMA Development Environment.                  **
 **                                                                              **
@@ -28,13 +29,47 @@
 #include "../General/WSdialogs.h"
 #include "../General/WSmenus.h"
 
+#include <cstdlib>
 #include <string>
 #include <gtk/gtk.h>
+#include <gdk/gdk.h>
 
 using namespace std;
 
-void show_error(string errortext, const bool fatal) {
-//TODO: Implement
+void show_error(string errortext, const bool fatal)
+{
+//NOTE: GTK+ Error Dialog now works A-Okay
+
+	gdk_threads_enter();
+
+	GtkWidget* dlg = gtk_message_dialog_new( NULL, GTK_DIALOG_MODAL, GTK_MESSAGE_ERROR, GTK_BUTTONS_NONE, "%s", errortext.c_str() );
+
+	gtk_dialog_add_buttons( GTK_DIALOG(dlg), "Abort", 1000, "Ignore", 1001, "Cancel", 1002, NULL );
+
+	gint result = gtk_dialog_run( GTK_DIALOG(dlg) );
+    gtk_widget_destroy( dlg );
+
+    gdk_threads_leave();
+
+	switch (result)
+    {
+    case 1000:
+		printf("FATAL ERROR: %s\n",errortext.c_str());
+        exit( EXIT_FAILURE );
+        break;
+
+    case 1001:
+        {
+			printf( "FATAL ERROR: %s\n",errortext.c_str() );
+			if ( fatal ) exit( EXIT_FAILURE );
+        }
+        break;
+
+	case 1002:
+    default:
+		printf("WARNING: %s\n",errortext.c_str());
+        break;
+    }
 }
 
 int get_color(int defcol)
